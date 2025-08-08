@@ -12,11 +12,11 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
-    "declarationDir": "dist-types",
+    "declarationDir": "dist",
     "outDir": "dist",
     "lib": ["es2020"],
     "typeRoots": ["node_modules/@types"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "dist-types"]
+  "exclude": ["node_modules", "dist"]
 }
