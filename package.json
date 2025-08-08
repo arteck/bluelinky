@@ -8,6 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist/ && rollup -c rollup.config.js",
+    "build:ts": "rimraf dist && tsc",
     "dev": "rollup -w -c rollup.config.js",
     "lint": "eslint ./src --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --write './src/**/*.{js,jsx,ts,tsx}'",
