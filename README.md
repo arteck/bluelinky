@@ -1,9 +1,7 @@
 # bluelinky
 
 An unofficial nodejs API wrapper for Hyundai BlueLink
-
-[![npm](https://img.shields.io/npm/v/bluelinky.svg)](https://www.npmjs.com/package/bluelinky)
-[![Discord](https://img.shields.io/discord/652755205041029120)](https://discord.gg/HwnG8sY)
+modif Package for iobroker
 
 ## Install
 ```sh
@@ -100,3 +98,4 @@ Give a ⭐️ if this project helped you!
 ## Warnings
 Using Bluelinky may result in draining your 12V battery when refreshing from the car too often. 
 Make sure you have read and understood the terms of use of your Kia or Hyundai account before using Bluelinky.
+
