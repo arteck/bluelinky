@@ -1,21 +1,26 @@
-import { REGIONS, DEFAULT_VEHICLE_STATUS_OPTIONS, POSSIBLE_CHARGE_LIMIT_VALUES, } from '../constants';
-import { EVPlugTypes, EVChargeModeTypes, } from '../interfaces/common.interfaces';
-import logger from '../logger';
-import { Vehicle } from './vehicle';
-import { celciusToTempCode, tempCodeToCelsius, parseDate, addMinutes } from '../util';
-import { manageBluelinkyError, ManagedBluelinkyError } from '../tools/common.tools';
-import { historyDrivingPeriod, } from '../interfaces/european.interfaces';
-export default class EuropeanVehicle extends Vehicle {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const constants_1 = require("../constants");
+const common_interfaces_1 = require("../interfaces/common.interfaces");
+const logger_1 = __importDefault(require("../logger"));
+const vehicle_1 = require("./vehicle");
+const util_1 = require("../util");
+const common_tools_1 = require("../tools/common.tools");
+const european_interfaces_1 = require("../interfaces/european.interfaces");
+class EuropeanVehicle extends vehicle_1.Vehicle {
     constructor(vehicleConfig, controller) {
         super(vehicleConfig, controller);
         this.vehicleConfig = vehicleConfig;
         this.controller = controller;
-        this.region = REGIONS.EU;
+        this.region = constants_1.REGIONS.EU;
         this.serverRates = {
             max: -1,
             current: -1,
         };
-        logger.debug(`EU Vehicle ${this.vehicleConfig.id} created`);
+        logger_1.default.debug(`EU Vehicle ${this.vehicleConfig.id} created`);
     }
     /**
      *
@@ -34,15 +39,15 @@ export default class EuropeanVehicle extends Vehicle {
                         defrost: config.defrost,
                         heating1: config.heatedFeatures ? 1 : 0,
                     },
-                    tempCode: celciusToTempCode(REGIONS.EU, config.temperature),
+                    tempCode: (0, util_1.celciusToTempCode)(constants_1.REGIONS.EU, config.temperature),
                     unit: config.unit,
                 },
             }));
-            logger.info(`Climate started for vehicle ${this.vehicleConfig.id}`);
+            logger_1.default.info(`Climate started for vehicle ${this.vehicleConfig.id}`);
             return response.body;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.start');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.start');
         }
     }
     async stop() {
@@ -60,11 +65,11 @@ export default class EuropeanVehicle extends Vehicle {
                     unit: 'C',
                 },
             }));
-            logger.info(`Climate stopped for vehicle ${this.vehicleConfig.id}`);
+            logger_1.default.info(`Climate stopped for vehicle ${this.vehicleConfig.id}`);
             return response.body;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.stop');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.stop');
         }
     }
     async lock() {
@@ -77,13 +82,13 @@ export default class EuropeanVehicle extends Vehicle {
                 },
             }));
             if (response.statusCode === 200) {
-                logger.debug(`Vehicle ${this.vehicleConfig.id} locked`);
+                logger_1.default.debug(`Vehicle ${this.vehicleConfig.id} locked`);
                 return 'Lock successful';
             }
             return 'Something went wrong!';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.lock');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.lock');
         }
     }
     async unlock() {
@@ -96,18 +101,18 @@ export default class EuropeanVehicle extends Vehicle {
                 },
             }));
             if (response.statusCode === 200) {
-                logger.debug(`Vehicle ${this.vehicleConfig.id} unlocked`);
+                logger_1.default.debug(`Vehicle ${this.vehicleConfig.id} unlocked`);
                 return 'Unlock successful';
             }
             return 'Something went wrong!';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.unlock');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.unlock');
         }
     }
     async fullStatus(input) {
         const statusConfig = {
-            ...DEFAULT_VEHICLE_STATUS_OPTIONS,
+            ...constants_1.DEFAULT_VEHICLE_STATUS_OPTIONS,
             ...input,
         };
         const http = await this.controller.getVehicleHttpService();
@@ -131,12 +136,12 @@ export default class EuropeanVehicle extends Vehicle {
             return this._fullStatus;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.fullStatus');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.fullStatus');
         }
     }
     async status(input) {
         const statusConfig = {
-            ...DEFAULT_VEHICLE_STATUS_OPTIONS,
+            ...constants_1.DEFAULT_VEHICLE_STATUS_OPTIONS,
             ...input,
         };
         const http = await this.controller.getVehicleHttpService();
@@ -154,10 +159,10 @@ export default class EuropeanVehicle extends Vehicle {
                 if (vehicleStatus?.Green?.ChargingInformation?.ConnectorFastening?.State) {
                     // TODO: Interpret vehicleStatus.Green.ChargingInformation.SequenceDetails
                     // and vehicleStatus.Green.ChargingInformation.SequenceSubcode
-                    plugedTo = EVPlugTypes.STATION;
+                    plugedTo = common_interfaces_1.EVPlugTypes.STATION;
                 }
                 else {
-                    plugedTo = EVPlugTypes.UNPLUGED;
+                    plugedTo = common_interfaces_1.EVPlugTypes.UNPLUGED;
                 }
                 parsedStatus = {
                     chassis: {
@@ -203,7 +208,7 @@ export default class EuropeanVehicle extends Vehicle {
                         batteryCharge12v: vehicleStatus?.Electronics?.Battery?.Level,
                         batteryChargeHV: vehicleStatus?.Green?.BatteryManagement?.BatteryRemain?.Ratio,
                     },
-                    lastupdate: vehicleStatus?.Date ? parseDate(vehicleStatus?.Date) : null,
+                    lastupdate: vehicleStatus?.Date ? (0, util_1.parseDate)(vehicleStatus?.Date) : null,
                 };
             }
             else {
@@ -238,7 +243,7 @@ export default class EuropeanVehicle extends Vehicle {
                         sideMirrorHeat: false,
                         rearWindowHeat: !!vehicleStatus?.sideBackWindowHeat,
                         defrost: vehicleStatus?.defrost,
-                        temperatureSetpoint: tempCodeToCelsius(REGIONS.EU, vehicleStatus?.airTemp?.value),
+                        temperatureSetpoint: (0, util_1.tempCodeToCelsius)(constants_1.REGIONS.EU, vehicleStatus?.airTemp?.value),
                         temperatureUnit: vehicleStatus?.airTemp?.unit,
                     },
                     engine: {
@@ -249,7 +254,7 @@ export default class EuropeanVehicle extends Vehicle {
                         // EV
                         range: vehicleStatus?.evStatus?.drvDistance[0]?.rangeByFuel?.totalAvailableRange?.value,
                         rangeEV: vehicleStatus?.evStatus?.drvDistance[0]?.rangeByFuel?.evModeRange?.value,
-                        plugedTo: vehicleStatus?.evStatus?.batteryPlugin ?? EVPlugTypes.UNPLUGED,
+                        plugedTo: vehicleStatus?.evStatus?.batteryPlugin ?? common_interfaces_1.EVPlugTypes.UNPLUGED,
                         charging: vehicleStatus?.evStatus?.batteryCharge,
                         estimatedCurrentChargeDuration: vehicleStatus?.evStatus?.remainTime2?.atc?.value,
                         estimatedFastChargeDuration: vehicleStatus?.evStatus?.remainTime2?.etc1?.value,
@@ -258,7 +263,7 @@ export default class EuropeanVehicle extends Vehicle {
                         batteryCharge12v: vehicleStatus?.battery?.batSoc,
                         batteryChargeHV: vehicleStatus?.evStatus?.batteryStatus,
                     },
-                    lastupdate: vehicleStatus?.time ? parseDate(vehicleStatus?.time) : null,
+                    lastupdate: vehicleStatus?.time ? (0, util_1.parseDate)(vehicleStatus?.time) : null,
                 };
                 if (!parsedStatus.engine.range) {
                     if (parsedStatus.engine.rangeEV || parsedStatus.engine.rangeGas) {
@@ -271,7 +276,7 @@ export default class EuropeanVehicle extends Vehicle {
             return this._status;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.status');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.status');
         }
     }
     async odometer() {
@@ -289,7 +294,7 @@ export default class EuropeanVehicle extends Vehicle {
             }
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.odometer');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.odometer');
         }
     }
     async location() {
@@ -310,7 +315,7 @@ export default class EuropeanVehicle extends Vehicle {
             return this._location;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.location');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.location');
         }
     }
     async startCharge() {
@@ -323,13 +328,13 @@ export default class EuropeanVehicle extends Vehicle {
                 },
             }));
             if (response.statusCode === 200) {
-                logger.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
+                logger_1.default.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
                 return 'Start charge successful';
             }
             throw 'Something went wrong!';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.startCharge');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.startCharge');
         }
     }
     async stopCharge() {
@@ -342,13 +347,13 @@ export default class EuropeanVehicle extends Vehicle {
                 },
             }));
             if (response.statusCode === 200) {
-                logger.debug(`Send stop charge command to Vehicle ${this.vehicleConfig.id}`);
+                logger_1.default.debug(`Send stop charge command to Vehicle ${this.vehicleConfig.id}`);
                 return 'Stop charge successful';
             }
             throw 'Something went wrong!';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.stopCharge');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.stopCharge');
         }
     }
     async monthlyReport(month = {
@@ -393,7 +398,7 @@ export default class EuropeanVehicle extends Vehicle {
             return;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.monthyReports');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.monthyReports');
         }
     }
     async tripInfo(date = {
@@ -417,7 +422,7 @@ export default class EuropeanVehicle extends Vehicle {
                     days: Array.isArray(rawData?.tripDayList)
                         ? rawData?.tripDayList.map(day => ({
                             dayRaw: day.tripDayInMonth,
-                            date: day.tripDayInMonth ? parseDate(day.tripDayInMonth) : undefined,
+                            date: day.tripDayInMonth ? (0, util_1.parseDate)(day.tripDayInMonth) : undefined,
                             tripsCount: day.tripCntDay,
                         }))
                         : [],
@@ -449,11 +454,11 @@ export default class EuropeanVehicle extends Vehicle {
                         },
                         trips: Array.isArray(day.tripList)
                             ? day.tripList.map(trip => {
-                                const start = parseDate(`${day.tripDay}${trip.tripTime}`);
+                                const start = (0, util_1.parseDate)(`${day.tripDay}${trip.tripTime}`);
                                 return {
                                     timeRaw: trip.tripTime,
                                     start,
-                                    end: addMinutes(start, trip.tripDrvTime),
+                                    end: (0, util_1.addMinutes)(start, trip.tripDrvTime),
                                     durations: {
                                         drive: trip.tripDrvTime,
                                         idle: trip.tripIdleTime,
@@ -472,10 +477,10 @@ export default class EuropeanVehicle extends Vehicle {
             return;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.history');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.history');
         }
     }
-    async driveHistory(period = historyDrivingPeriod.DAY) {
+    async driveHistory(period = european_interfaces_1.historyDrivingPeriod.DAY) {
         const http = await this.controller.getApiHttpService();
         try {
             const response = await http.post(`/api/v1/spa/vehicles/${this.vehicleConfig.id}/drvhistory`, {
@@ -499,7 +504,7 @@ export default class EuropeanVehicle extends Vehicle {
                 history: response.body.resMsg.drivingInfoDetail?.map(line => ({
                     period: line.drivingPeriod,
                     rawDate: line.drivingDate,
-                    date: line.drivingDate ? parseDate(line.drivingDate) : undefined,
+                    date: line.drivingDate ? (0, util_1.parseDate)(line.drivingDate) : undefined,
                     consumption: {
                         total: line.totalPwrCsp,
                         engine: line.motorPwrCsp,
@@ -513,7 +518,7 @@ export default class EuropeanVehicle extends Vehicle {
             };
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.history');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.history');
         }
     }
     /**
@@ -534,7 +539,7 @@ export default class EuropeanVehicle extends Vehicle {
             return;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.getChargeTargets');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.getChargeTargets');
         }
     }
     /**
@@ -542,22 +547,22 @@ export default class EuropeanVehicle extends Vehicle {
      */
     async setChargeTargets(limits) {
         const http = await this.controller.getVehicleHttpService();
-        if (!POSSIBLE_CHARGE_LIMIT_VALUES.includes(limits.fast) ||
-            !POSSIBLE_CHARGE_LIMIT_VALUES.includes(limits.slow)) {
-            throw new ManagedBluelinkyError(`Charge target values are limited to ${POSSIBLE_CHARGE_LIMIT_VALUES.join(', ')}`);
+        if (!constants_1.POSSIBLE_CHARGE_LIMIT_VALUES.includes(limits.fast) ||
+            !constants_1.POSSIBLE_CHARGE_LIMIT_VALUES.includes(limits.slow)) {
+            throw new common_tools_1.ManagedBluelinkyError(`Charge target values are limited to ${constants_1.POSSIBLE_CHARGE_LIMIT_VALUES.join(', ')}`);
         }
         try {
             this.updateRates(await http.post(`/api/v2/spa/vehicles/${this.vehicleConfig.id}/charge/target`, {
                 body: {
                     targetSOClist: [
-                        { plugType: EVChargeModeTypes.FAST, targetSOClevel: limits.fast },
-                        { plugType: EVChargeModeTypes.SLOW, targetSOClevel: limits.slow },
+                        { plugType: common_interfaces_1.EVChargeModeTypes.FAST, targetSOClevel: limits.fast },
+                        { plugType: common_interfaces_1.EVChargeModeTypes.SLOW, targetSOClevel: limits.slow },
                     ],
                 },
             }));
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.setChargeTargets');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.setChargeTargets');
         }
     }
     /**
@@ -575,7 +580,7 @@ export default class EuropeanVehicle extends Vehicle {
             }));
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'EuropeVehicle.setNavigation');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeVehicle.setNavigation');
         }
     }
     updateRates(resp) {
@@ -590,6 +595,7 @@ export default class EuropeanVehicle extends Vehicle {
         return resp;
     }
 }
+exports.default = EuropeanVehicle;
 function toMonthDate(month) {
     return `${month.year}${month.month.toString().padStart(2, '0')}`;
 }

@@ -1,6 +1,9 @@
-import { REGIONS } from '../constants';
-import { StampMode, getStampGenerator } from './stamps';
-export const EU_LANGUAGES = [
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBrandEnvironment = exports.DEFAULT_LANGUAGE = exports.EU_LANGUAGES = void 0;
+const constants_1 = require("../constants");
+const stamps_1 = require("./stamps");
+exports.EU_LANGUAGES = [
     'cs',
     'da',
     'nl',
@@ -16,7 +19,7 @@ export const EU_LANGUAGES = [
     'es',
     'sv',
 ];
-export const DEFAULT_LANGUAGE = 'en';
+exports.DEFAULT_LANGUAGE = 'en';
 const getEndpoints = (baseUrl, clientId) => ({
     session: `${baseUrl}/api/v1/user/oauth2/authorize?response_type=code&state=test&client_id=${clientId}&redirect_uri=${baseUrl}/api/v1/user/oauth2/redirect`,
     login: `${baseUrl}/api/v1/user/signin`,
@@ -40,11 +43,11 @@ const getHyundaiEnvironment = ({ stampMode, stampsFile, }) => {
         endpoints: Object.freeze(getEndpoints(baseUrl, clientId)),
         basicToken: 'Basic NmQ0NzdjMzgtM2NhNC00Y2YzLTk1NTctMmExOTI5YTk0NjU0OktVeTQ5WHhQekxwTHVvSzB4aEJDNzdXNlZYaG10UVI5aVFobUlGampvWTRJcHhzVg==',
         GCMSenderID: '414998006775',
-        stamp: getStampGenerator({
+        stamp: (0, stamps_1.getStampGenerator)({
             appId,
             brand: 'hyundai',
             mode: stampMode,
-            region: REGIONS.EU,
+            region: constants_1.REGIONS.EU,
             stampHost: 'https://raw.githubusercontent.com/neoPix/bluelinky-stamps/master/',
             stampsFile: stampsFile,
         }),
@@ -68,11 +71,11 @@ const getKiaEnvironment = ({ stampMode, stampsFile, }) => {
         endpoints: Object.freeze(getEndpoints(baseUrl, clientId)),
         basicToken: 'Basic ZmRjODVjMDAtMGEyZi00YzY0LWJjYjQtMmNmYjE1MDA3MzBhOnNlY3JldA==',
         GCMSenderID: '345127537656',
-        stamp: getStampGenerator({
+        stamp: (0, stamps_1.getStampGenerator)({
             appId,
             brand: 'kia',
             mode: stampMode,
-            region: REGIONS.EU,
+            region: constants_1.REGIONS.EU,
             stampHost: 'https://raw.githubusercontent.com/neoPix/bluelinky-stamps/master/',
             stampsFile: stampsFile,
         }),
@@ -82,7 +85,7 @@ const getKiaEnvironment = ({ stampMode, stampsFile, }) => {
         },
     };
 };
-export const getBrandEnvironment = ({ brand, stampMode = StampMode.DISTANT, stampsFile, }) => {
+const getBrandEnvironment = ({ brand, stampMode = stamps_1.StampMode.DISTANT, stampsFile, }) => {
     switch (brand) {
         case 'hyundai':
             return Object.freeze(getHyundaiEnvironment({ stampMode, stampsFile }));
@@ -92,4 +95,5 @@ export const getBrandEnvironment = ({ brand, stampMode = StampMode.DISTANT, stam
             throw new Error(`Constructor ${brand} is not managed.`);
     }
 };
+exports.getBrandEnvironment = getBrandEnvironment;
 //# sourceMappingURL=europe.js.map

@@ -1,5 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SessionController = void 0;
 // changed this to interface so we can have option things?
-export class SessionController {
+class SessionController {
     constructor(userConfig) {
         this.userConfig = userConfig;
         this.session = {
@@ -11,4 +14,5 @@ export class SessionController {
         };
     }
 }
+exports.SessionController = SessionController;
 //# sourceMappingURL=controller.js.map

@@ -1,14 +1,21 @@
-import got from 'got';
-const { HTTPError, ParseError } = got;
-export class ManagedBluelinkyError extends Error {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.uuidV4 = exports.asyncMap = exports.manageBluelinkyError = exports.ManagedBluelinkyError = void 0;
+const got_1 = __importDefault(require("got"));
+const { HTTPError, ParseError } = got_1.default;
+class ManagedBluelinkyError extends Error {
     constructor(message, source) {
         super(message);
         this.source = source;
         this.name = ManagedBluelinkyError.ErrorName;
     }
 }
+exports.ManagedBluelinkyError = ManagedBluelinkyError;
 ManagedBluelinkyError.ErrorName = 'ManagedBluelinkyError';
-export const manageBluelinkyError = (err, context) => {
+const manageBluelinkyError = (err, context) => {
     if (err instanceof HTTPError) {
         return new ManagedBluelinkyError(`${context ? `@${context}: ` : ''}[${err.statusCode}] ${err.statusMessage} on [${err.method}] ${err.url} - ${JSON.stringify(err.body)}`, err);
     }
@@ -20,15 +27,18 @@ export const manageBluelinkyError = (err, context) => {
     }
     return err;
 };
-export const asyncMap = async (array, callback) => {
+exports.manageBluelinkyError = manageBluelinkyError;
+const asyncMap = async (array, callback) => {
     const mapped = [];
     for (let index = 0; index < array.length; index++) {
         mapped.push(await callback(array[index], index, array));
     }
     return mapped;
 };
-export const uuidV4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+exports.asyncMap = asyncMap;
+const uuidV4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0, v = c == 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
 });
+exports.uuidV4 = uuidV4;
 //# sourceMappingURL=common.tools.js.map
