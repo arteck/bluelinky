@@ -1,4 +1,6 @@
-import { HTTPError, ParseError } from 'got';
+import got from 'got';
+const { HTTPError, ParseError } = got;
+
 export class ManagedBluelinkyError extends Error {
   static ErrorName = 'ManagedBluelinkyError';
   constructor(message: string, public readonly source?: Error) {
