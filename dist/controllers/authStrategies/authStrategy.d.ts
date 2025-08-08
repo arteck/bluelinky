@@ -1,5 +1,5 @@
 import { CookieJar } from 'tough-cookie';
-import { EULanguages, EuropeanBrandEnvironment } from '../../constants/europe';
+import { EuropeanBrandEnvironment } from '../../constants/europe';
 export type Code = string;
 export interface AuthStrategy {
     readonly name: string;
@@ -13,4 +13,4 @@ export interface AuthStrategy {
         cookies: CookieJar;
     }>;
 }
-export declare function initSession(environment: EuropeanBrandEnvironment, language?: EULanguages, cookies?: CookieJar): Promise<CookieJar>;
+export declare function initSession(environment: EuropeanBrandEnvironment, cookies?: CookieJar): Promise<CookieJar>;

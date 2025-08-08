@@ -9,8 +9,6 @@ export declare const ALL_ENDPOINTS: {
     CN: (brand: Brand) => ChineseBrandEnvironment['endpoints'];
     AU: (brand: Brand) => AustraliaBrandEnvironment['endpoints'];
 };
-export declare const GEN2 = 2;
-export declare const GEN1 = 1;
 export type REGION = 'US' | 'CA' | 'EU' | 'CN' | 'AU';
 export declare enum REGIONS {
     US = "US",
