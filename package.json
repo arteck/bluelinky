@@ -7,10 +7,10 @@
   "type": "module",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build:cjs_iobroker": "rimraf dist && tsc -p tsconfig.cjs.json",
+    "build:esm": "rimraf dist && tsc -p tsconfig.json",    
+    "build:both": "rimraf dist && tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",    
     "build": "rimraf dist/ && rollup -c rollup.config.js",
-    "build:esm": "rimraf dist && tsc -p tsconfig.json",
-    "build:cjs": "rimraf dist && tsc -p tsconfig.cjs.json",
-    "build:both": "rimraf dist && tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
     "dev": "rollup -w -c rollup.config.js",
     "lint": "eslint ./src --ext .js,.jsx,.ts,.tsx",
     "format": "prettier --write './src/**/*.{js,jsx,ts,tsx}'",
