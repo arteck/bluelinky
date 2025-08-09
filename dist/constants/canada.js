@@ -1,6 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBrandEnvironment = void 0;
 const getEndpoints = (baseUrl) => ({
     login: `${baseUrl}/tods/api/lgn`,
     logout: `${baseUrl}/tods/api/lgout`,
@@ -45,7 +42,7 @@ const getKiaEnvironment = () => {
         ...getEnvironment('kiaconnect.ca'),
     };
 };
-const getBrandEnvironment = (brand) => {
+export const getBrandEnvironment = (brand) => {
     switch (brand) {
         case 'hyundai':
             return Object.freeze(getHyundaiEnvironment());
@@ -55,5 +52,4 @@ const getBrandEnvironment = (brand) => {
             throw new Error(`Constructor ${brand} is not managed.`);
     }
 };
-exports.getBrandEnvironment = getBrandEnvironment;
 //# sourceMappingURL=canada.js.map

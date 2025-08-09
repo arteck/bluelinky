@@ -1,16 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EuropeanBrandAuthStrategy = void 0;
-const got_1 = __importDefault(require("got"));
-const authStrategy_1 = require("./authStrategy");
-const url_1 = require("url");
+import got from 'got';
+import { initSession } from './authStrategy';
+import { URLSearchParams } from 'url';
 const stdHeaders = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_1 like Mac OS X) AppleWebKit/604.3.5 (KHTML, like Gecko) Version/11.0 Mobile/15B92 Safari/604.1',
 };
-class EuropeanBrandAuthStrategy {
+export class EuropeanBrandAuthStrategy {
     constructor(environment, language) {
         this.environment = environment;
         this.language = language;
@@ -19,14 +13,14 @@ class EuropeanBrandAuthStrategy {
         return 'EuropeanBrandAuthStrategy';
     }
     async login(user, options) {
-        const cookieJar = await (0, authStrategy_1.initSession)(this.environment, options?.cookieJar);
+        const cookieJar = await initSession(this.environment, options?.cookieJar);
         // Build the correct auth URL based on the new KIA/Hyundai authentication
         const authHost = this.environment.brand === 'kia'
             ? 'idpconnect-eu.kia.com'
             : 'idpconnect-eu.hyundai.com';
         const authUrl = `https://${authHost}/auth/api/v2/user/oauth2/authorize?response_type=code&client_id=${this.environment.clientId}&redirect_uri=${this.environment.baseUrl}/api/v1/user/oauth2/redirect&lang=${this.language}&state=ccsp`;
         // Step 1: GET request to auth URL to get connector_session_key
-        const authResponse = await (0, got_1.default)(authUrl, {
+        const authResponse = await got(authUrl, {
             cookieJar,
             headers: stdHeaders,
             followRedirect: true,
@@ -53,7 +47,7 @@ class EuropeanBrandAuthStrategy {
         }
         // Step 2: POST to signin endpoint
         const signinUrl = `https://${authHost}/auth/account/signin`;
-        const formData = new url_1.URLSearchParams();
+        const formData = new URLSearchParams();
         formData.append('client_id', this.environment.clientId);
         formData.append('encryptedPassword', 'false');
         formData.append('orgHmgSid', '');
@@ -64,7 +58,7 @@ class EuropeanBrandAuthStrategy {
         formData.append('remember_me', 'false');
         formData.append('connector_session_key', connectorSessionKey);
         formData.append('_csrf', '');
-        const signinResponse = await got_1.default.post(signinUrl, {
+        const signinResponse = await got.post(signinUrl, {
             cookieJar,
             body: formData.toString(),
             headers: {
@@ -100,5 +94,4 @@ class EuropeanBrandAuthStrategy {
         };
     }
 }
-exports.EuropeanBrandAuthStrategy = EuropeanBrandAuthStrategy;
 //# sourceMappingURL=european.brandAuth.strategy.js.map

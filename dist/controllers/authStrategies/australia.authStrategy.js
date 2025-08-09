@@ -1,13 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AustraliaAuthStrategy = void 0;
-const got_1 = __importDefault(require("got"));
-const tough_cookie_1 = require("tough-cookie");
-const url_1 = __importDefault(require("url"));
-class AustraliaAuthStrategy {
+import got from 'got';
+import { CookieJar } from 'tough-cookie';
+import Url from 'url';
+export class AustraliaAuthStrategy {
     constructor(environment) {
         this.environment = environment;
     }
@@ -15,9 +9,9 @@ class AustraliaAuthStrategy {
         return 'AustraliaAuthStrategy';
     }
     async login(user, options) {
-        const cookieJar = options?.cookieJar ?? new tough_cookie_1.CookieJar();
-        await (0, got_1.default)(this.environment.endpoints.session, { cookieJar });
-        const { body: bodyStr, statusCode } = await (0, got_1.default)(this.environment.endpoints.login, {
+        const cookieJar = options?.cookieJar ?? new CookieJar();
+        await got(this.environment.endpoints.session, { cookieJar });
+        const { body: bodyStr, statusCode } = await got(this.environment.endpoints.login, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain',
@@ -33,7 +27,7 @@ class AustraliaAuthStrategy {
         if (!body.redirectUrl) {
             throw new Error(`@AustraliaAuthStrategy.login: sign In didn't work, could not retrieve auth code. status: ${statusCode}, body: ${JSON.stringify(body)}`);
         }
-        const { code } = url_1.default.parse(body.redirectUrl, true).query;
+        const { code } = Url.parse(body.redirectUrl, true).query;
         if (!code) {
             throw new Error('@AustraliaAuthStrategy.login: AuthCode was not found, you probably need to migrate your account.');
         }
@@ -43,5 +37,4 @@ class AustraliaAuthStrategy {
         };
     }
 }
-exports.AustraliaAuthStrategy = AustraliaAuthStrategy;
 //# sourceMappingURL=australia.authStrategy.js.map

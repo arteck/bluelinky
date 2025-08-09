@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Vehicle = void 0;
-const constants_1 = require("../constants");
-class Vehicle {
+import { REGIONS } from '../constants';
+export class Vehicle {
     constructor(vehicleConfig, controller) {
         this.vehicleConfig = vehicleConfig;
         this.controller = controller;
@@ -13,7 +10,7 @@ class Vehicle {
         this.userConfig = {
             username: undefined,
             password: undefined,
-            region: constants_1.REGIONS.EU,
+            region: REGIONS.EU,
             brand: 'hyundai',
             autoLogin: true,
             pin: undefined,
@@ -38,5 +35,4 @@ class Vehicle {
         return this.vehicleConfig.brandIndicator;
     }
 }
-exports.Vehicle = Vehicle;
 //# sourceMappingURL=vehicle.js.map

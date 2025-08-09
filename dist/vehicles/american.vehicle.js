@@ -1,20 +1,15 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const got_1 = __importDefault(require("got"));
-const logger_1 = __importDefault(require("../logger"));
-const constants_1 = require("../constants");
-const vehicle_1 = require("./vehicle");
-const url_1 = require("url");
-class AmericanVehicle extends vehicle_1.Vehicle {
+import got from 'got';
+import logger from '../logger';
+import { REGIONS, DEFAULT_VEHICLE_STATUS_OPTIONS } from '../constants';
+import { Vehicle } from './vehicle';
+import { URLSearchParams } from 'url';
+export default class AmericanVehicle extends Vehicle {
     constructor(vehicleConfig, controller) {
         super(vehicleConfig, controller);
         this.vehicleConfig = vehicleConfig;
         this.controller = controller;
-        this.region = constants_1.REGIONS.US;
-        logger_1.default.debug(`US Vehicle ${this.vehicleConfig.regId} created`);
+        this.region = REGIONS.US;
+        logger.debug(`US Vehicle ${this.vehicleConfig.regId} created`);
     }
     getDefaultHeaders() {
         return {
@@ -135,7 +130,7 @@ class AmericanVehicle extends vehicle_1.Vehicle {
     }
     async status(input) {
         const statusConfig = {
-            ...constants_1.DEFAULT_VEHICLE_STATUS_OPTIONS,
+            ...DEFAULT_VEHICLE_STATUS_OPTIONS,
             ...input,
         };
         const response = await this._request('/ac/v2/rcs/rvs/vehicleStatus', {
@@ -190,7 +185,7 @@ class AmericanVehicle extends vehicle_1.Vehicle {
         return this._status;
     }
     async unlock() {
-        const formData = new url_1.URLSearchParams();
+        const formData = new URLSearchParams();
         formData.append('userName', this.userConfig.username || '');
         formData.append('vin', this.vehicleConfig.vin);
         const response = await this._request('/ac/v2/rcs/rdo/on', {
@@ -204,7 +199,7 @@ class AmericanVehicle extends vehicle_1.Vehicle {
         return 'Something went wrong!';
     }
     async lock() {
-        const formData = new url_1.URLSearchParams();
+        const formData = new URLSearchParams();
         formData.append('userName', this.userConfig.username || '');
         formData.append('vin', this.vehicleConfig.vin);
         const response = await this._request('/ac/v2/rcs/rdo/off', {
@@ -222,17 +217,17 @@ class AmericanVehicle extends vehicle_1.Vehicle {
             method: 'POST',
         });
         if (response.statusCode === 200) {
-            logger_1.default.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
+            logger.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
             return 'Start charge successful';
         }
         throw 'Something went wrong!';
     }
     async stopCharge() {
-        const response = await (0, got_1.default)(`/api/v2/spa/vehicles/${this.vehicleConfig.id}/control/charge`, {
+        const response = await got(`/api/v2/spa/vehicles/${this.vehicleConfig.id}/control/charge`, {
             method: 'POST',
         });
         if (response.statusCode === 200) {
-            logger_1.default.debug(`Send stop charge command to vehicle ${this.vehicleConfig.id}`);
+            logger.debug(`Send stop charge command to vehicle ${this.vehicleConfig.id}`);
             return 'Stop charge successful';
         }
         throw 'Something went wrong!';
@@ -244,15 +239,14 @@ class AmericanVehicle extends vehicle_1.Vehicle {
         await this.controller.refreshAccessToken();
         // if we refreshed token make sure to apply it to the request
         options.headers.access_token = this.controller.session.accessToken;
-        const response = await (0, got_1.default)(`${this.controller.environment.baseUrl}/${service}`, {
+        const response = await got(`${this.controller.environment.baseUrl}/${service}`, {
             throwHttpErrors: false,
             ...options,
         });
         if (response?.body) {
-            logger_1.default.debug(response.body);
+            logger.debug(response.body);
         }
         return response;
     }
 }
-exports.default = AmericanVehicle;
 //# sourceMappingURL=american.vehicle.js.map

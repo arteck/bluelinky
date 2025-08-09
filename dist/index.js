@@ -1,28 +1,22 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BlueLinky = void 0;
-const american_controller_1 = require("./controllers/american.controller");
-const european_controller_1 = require("./controllers/european.controller");
-const canadian_controller_1 = require("./controllers/canadian.controller");
-const chinese_controller_1 = require("./controllers/chinese.controller");
-const events_1 = require("events");
-const logger_1 = __importDefault(require("./logger"));
-const constants_1 = require("./constants");
-const australia_controller_1 = require("./controllers/australia.controller");
+import { AmericanController } from './controllers/american.controller';
+import { EuropeanController } from './controllers/european.controller';
+import { CanadianController } from './controllers/canadian.controller';
+import { ChineseController } from './controllers/chinese.controller';
+import { EventEmitter } from 'events';
+import logger from './logger';
+import { REGIONS } from './constants';
+import { AustraliaController } from './controllers/australia.controller';
 const DEFAULT_CONFIG = {
     username: '',
     password: '',
-    region: constants_1.REGIONS.US,
+    region: REGIONS.US,
     brand: 'hyundai',
     autoLogin: true,
     pin: '1234',
     vin: '',
     vehicleId: undefined,
 };
-class BlueLinky extends events_1.EventEmitter {
+export class BlueLinky extends EventEmitter {
     constructor(config) {
         super();
         this.vehicles = [];
@@ -32,20 +26,20 @@ class BlueLinky extends events_1.EventEmitter {
             ...config,
         };
         switch (config.region) {
-            case constants_1.REGIONS.EU:
-                this.controller = new european_controller_1.EuropeanController(this.config);
+            case REGIONS.EU:
+                this.controller = new EuropeanController(this.config);
                 break;
-            case constants_1.REGIONS.US:
-                this.controller = new american_controller_1.AmericanController(this.config);
+            case REGIONS.US:
+                this.controller = new AmericanController(this.config);
                 break;
-            case constants_1.REGIONS.CA:
-                this.controller = new canadian_controller_1.CanadianController(this.config);
+            case REGIONS.CA:
+                this.controller = new CanadianController(this.config);
                 break;
-            case constants_1.REGIONS.CN:
-                this.controller = new chinese_controller_1.ChineseController(this.config);
+            case REGIONS.CN:
+                this.controller = new ChineseController(this.config);
                 break;
-            case constants_1.REGIONS.AU:
-                this.controller = new australia_controller_1.AustraliaController(this.config);
+            case REGIONS.AU:
+                this.controller = new AustraliaController(this.config);
                 break;
             default:
                 throw new Error('Your region is not supported yet.');
@@ -61,7 +55,7 @@ class BlueLinky extends events_1.EventEmitter {
     }
     onInit() {
         if (this.config.autoLogin) {
-            logger_1.default.debug('Bluelinky is logging in automatically, to disable use autoLogin: false');
+            logger.debug('Bluelinky is logging in automatically, to disable use autoLogin: false');
             this.login();
         }
     }
@@ -70,7 +64,7 @@ class BlueLinky extends events_1.EventEmitter {
             const response = await this.controller.login();
             // get all cars from the controller
             this.vehicles = await this.getVehicles();
-            logger_1.default.debug(`Found ${this.vehicles.length} on the account`);
+            logger.debug(`Found ${this.vehicles.length} on the account`);
             this.emit('ready', this.vehicles);
             return response;
         }
@@ -113,6 +107,5 @@ class BlueLinky extends events_1.EventEmitter {
         return this.vehicles ?? [];
     }
 }
-exports.BlueLinky = BlueLinky;
-exports.default = BlueLinky;
+export default BlueLinky;
 //# sourceMappingURL=index.js.map

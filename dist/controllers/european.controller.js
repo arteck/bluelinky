@@ -1,41 +1,35 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EuropeanController = void 0;
-const europe_1 = require("./../constants/europe");
-const got_1 = __importDefault(require("got"));
-const european_vehicle_1 = __importDefault(require("../vehicles/european.vehicle"));
-const controller_1 = require("./controller");
-const logger_1 = __importDefault(require("../logger"));
-const url_1 = require("url");
-const common_tools_1 = require("../tools/common.tools");
-const european_brandAuth_strategy_1 = require("./authStrategies/european.brandAuth.strategy");
-const european_legacyAuth_strategy_1 = require("./authStrategies/european.legacyAuth.strategy");
-class EuropeanController extends controller_1.SessionController {
+import { getBrandEnvironment, DEFAULT_LANGUAGE, EU_LANGUAGES, } from './../constants/europe';
+import got from 'got';
+import EuropeanVehicle from '../vehicles/european.vehicle';
+import { SessionController } from './controller';
+import logger from '../logger';
+import { URLSearchParams } from 'url';
+import { asyncMap, manageBluelinkyError, uuidV4 } from '../tools/common.tools';
+import { EuropeanBrandAuthStrategy } from './authStrategies/european.brandAuth.strategy';
+import { EuropeanLegacyAuthStrategy } from './authStrategies/european.legacyAuth.strategy';
+export class EuropeanController extends SessionController {
     constructor(userConfig) {
         super(userConfig);
         this.session = {
             accessToken: undefined,
             refreshToken: undefined,
             controlToken: undefined,
-            deviceId: (0, common_tools_1.uuidV4)(),
+            deviceId: uuidV4(),
             tokenExpiresAt: 0,
             controlTokenExpiresAt: 0,
         };
         this.vehicles = [];
-        this.userConfig.language = userConfig.language ?? europe_1.DEFAULT_LANGUAGE;
-        if (!europe_1.EU_LANGUAGES.includes(this.userConfig.language)) {
-            throw new Error(`The language code ${this.userConfig.language} is not managed. Only ${europe_1.EU_LANGUAGES.join(', ')} are.`);
+        this.userConfig.language = userConfig.language ?? DEFAULT_LANGUAGE;
+        if (!EU_LANGUAGES.includes(this.userConfig.language)) {
+            throw new Error(`The language code ${this.userConfig.language} is not managed. Only ${EU_LANGUAGES.join(', ')} are.`);
         }
-        this.session.deviceId = (0, common_tools_1.uuidV4)();
-        this._environment = (0, europe_1.getBrandEnvironment)(userConfig);
+        this.session.deviceId = uuidV4();
+        this._environment = getBrandEnvironment(userConfig);
         this.authStrategies = {
-            main: new european_brandAuth_strategy_1.EuropeanBrandAuthStrategy(this._environment, this.userConfig.language),
-            fallback: new european_legacyAuth_strategy_1.EuropeanLegacyAuthStrategy(this._environment, this.userConfig.language),
+            main: new EuropeanBrandAuthStrategy(this._environment, this.userConfig.language),
+            fallback: new EuropeanLegacyAuthStrategy(this._environment, this.userConfig.language),
         };
-        logger_1.default.debug('EU Controller created');
+        logger.debug('EU Controller created');
     }
     get environment() {
         return this._environment;
@@ -43,19 +37,19 @@ class EuropeanController extends controller_1.SessionController {
     async refreshAccessToken() {
         const shouldRefreshToken = Math.floor(Date.now() / 1000 - this.session.tokenExpiresAt) >= -10;
         if (!this.session.refreshToken) {
-            logger_1.default.debug('Need refresh token to refresh access token. Use login()');
+            logger.debug('Need refresh token to refresh access token. Use login()');
             return 'Need refresh token to refresh access token. Use login()';
         }
         if (!shouldRefreshToken) {
-            logger_1.default.debug('Token not expired, no need to refresh');
+            logger.debug('Token not expired, no need to refresh');
             return 'Token not expired, no need to refresh';
         }
-        const formData = new url_1.URLSearchParams();
+        const formData = new URLSearchParams();
         formData.append('grant_type', 'refresh_token');
         formData.append('redirect_uri', 'https://www.getpostman.com/oauth2/callback'); // Oversight from Hyundai developers
         formData.append('refresh_token', this.session.refreshToken);
         try {
-            const response = await (0, got_1.default)(this.environment.endpoints.token, {
+            const response = await got(this.environment.endpoints.token, {
                 method: 'POST',
                 headers: {
                     'Authorization': this.environment.basicToken,
@@ -69,7 +63,7 @@ class EuropeanController extends controller_1.SessionController {
                 throwHttpErrors: false,
             });
             if (response.statusCode !== 200) {
-                logger_1.default.debug(`Refresh token failed: ${response.body}`);
+                logger.debug(`Refresh token failed: ${response.body}`);
                 return `Refresh token failed: ${response.body}`;
             }
             const responseBody = JSON.parse(response.body);
@@ -77,9 +71,9 @@ class EuropeanController extends controller_1.SessionController {
             this.session.tokenExpiresAt = Math.floor(Date.now() / 1000 + responseBody.expires_in);
         }
         catch (err) {
-            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeController.refreshAccessToken');
+            throw manageBluelinkyError(err, 'EuropeController.refreshAccessToken');
         }
-        logger_1.default.debug('Token refreshed');
+        logger.debug('Token refreshed');
         return 'Token refreshed';
     }
     async enterPin() {
@@ -87,7 +81,7 @@ class EuropeanController extends controller_1.SessionController {
             throw 'Token not set';
         }
         try {
-            const response = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/user/pin`, {
+            const response = await got(`${this.environment.baseUrl}/api/v1/user/pin`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': this.session.accessToken,
@@ -104,7 +98,7 @@ class EuropeanController extends controller_1.SessionController {
             return 'PIN entered OK, The pin is valid for 10 minutes';
         }
         catch (err) {
-            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeController.pin');
+            throw manageBluelinkyError(err, 'EuropeController.pin');
         }
     }
     async login() {
@@ -114,23 +108,23 @@ class EuropeanController extends controller_1.SessionController {
             }
             let authResult = null;
             try {
-                logger_1.default.debug(`@EuropeController.login: Trying to sign in with ${this.authStrategies.main.name}`);
+                logger.debug(`@EuropeController.login: Trying to sign in with ${this.authStrategies.main.name}`);
                 authResult = await this.authStrategies.main.login({
                     password: this.userConfig.password,
                     username: this.userConfig.username,
                 });
             }
             catch (e) {
-                logger_1.default.error(`@EuropeController.login: sign in with ${this.authStrategies.main.name} failed with error ${e.toString()}`);
-                logger_1.default.debug(`@EuropeController.login: Trying to sign in with ${this.authStrategies.fallback.name}`);
+                logger.error(`@EuropeController.login: sign in with ${this.authStrategies.main.name} failed with error ${e.toString()}`);
+                logger.debug(`@EuropeController.login: Trying to sign in with ${this.authStrategies.fallback.name}`);
                 authResult = await this.authStrategies.fallback.login({
                     password: this.userConfig.password,
                     username: this.userConfig.username,
                 });
             }
-            logger_1.default.debug('@EuropeController.login: Authenticated properly with user and password');
+            logger.debug('@EuropeController.login: Authenticated properly with user and password');
             const genRanHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-            const notificationReponse = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/notifications/register`, {
+            const notificationReponse = await got(`${this.environment.baseUrl}/api/v1/spa/notifications/register`, {
                 method: 'POST',
                 headers: {
                     'ccsp-service-id': this.environment.clientId,
@@ -152,18 +146,18 @@ class EuropeanController extends controller_1.SessionController {
             if (notificationReponse) {
                 this.session.deviceId = notificationReponse.body.resMsg.deviceId;
             }
-            logger_1.default.debug('@EuropeController.login: Device registered');
+            logger.debug('@EuropeController.login: Device registered');
             // Updated token exchange to use new endpoint based on Python fix
             const tokenUrl = this.environment.brand === 'kia'
                 ? 'https://idpconnect-eu.kia.com/auth/api/v2/user/oauth2/token'
                 : 'https://idpconnect-eu.hyundai.com/auth/api/v2/user/oauth2/token';
-            const tokenFormData = new url_1.URLSearchParams();
+            const tokenFormData = new URLSearchParams();
             tokenFormData.append('grant_type', 'authorization_code');
             tokenFormData.append('code', authResult.code);
             tokenFormData.append('redirect_uri', `${this.environment.baseUrl}/api/v1/user/oauth2/redirect`);
             tokenFormData.append('client_id', this.environment.clientId);
             tokenFormData.append('client_secret', 'secret');
-            const response = await (0, got_1.default)(tokenUrl, {
+            const response = await got(tokenUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -182,11 +176,11 @@ class EuropeanController extends controller_1.SessionController {
                 this.session.refreshToken = responseBody.refresh_token;
                 this.session.tokenExpiresAt = Math.floor(Date.now() / 1000 + responseBody.expires_in);
             }
-            logger_1.default.debug('@EuropeController.login: Session defined properly');
+            logger.debug('@EuropeController.login: Session defined properly');
             return 'Login success';
         }
         catch (err) {
-            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeController.login');
+            throw manageBluelinkyError(err, 'EuropeController.login');
         }
     }
     async logout() {
@@ -197,7 +191,7 @@ class EuropeanController extends controller_1.SessionController {
             throw 'Token not set';
         }
         try {
-            const response = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/vehicles`, {
+            const response = await got(`${this.environment.baseUrl}/api/v1/spa/vehicles`, {
                 method: 'GET',
                 headers: {
                     ...this.defaultHeaders,
@@ -205,8 +199,8 @@ class EuropeanController extends controller_1.SessionController {
                 },
                 json: true,
             });
-            this.vehicles = await (0, common_tools_1.asyncMap)(response.body.resMsg.vehicles, async (v) => {
-                const vehicleProfileReponse = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/vehicles/${v.vehicleId}/profile`, {
+            this.vehicles = await asyncMap(response.body.resMsg.vehicles, async (v) => {
+                const vehicleProfileReponse = await got(`${this.environment.baseUrl}/api/v1/spa/vehicles/${v.vehicleId}/profile`, {
                     method: 'GET',
                     headers: {
                         ...this.defaultHeaders,
@@ -225,12 +219,12 @@ class EuropeanController extends controller_1.SessionController {
                     generation: vehicleProfile.vinInfo[0].basic.modelYear,
                     ccuCCS2ProtocolSupport: !!v.ccuCCS2ProtocolSupport
                 };
-                logger_1.default.debug(`@EuropeController.getVehicles: Added vehicle ${vehicleConfig.id}`);
-                return new european_vehicle_1.default(vehicleConfig, this);
+                logger.debug(`@EuropeController.getVehicles: Added vehicle ${vehicleConfig.id}`);
+                return new EuropeanVehicle(vehicleConfig, this);
             });
         }
         catch (err) {
-            throw (0, common_tools_1.manageBluelinkyError)(err, 'EuropeController.getVehicles');
+            throw manageBluelinkyError(err, 'EuropeController.getVehicles');
         }
         return this.vehicles;
     }
@@ -244,7 +238,7 @@ class EuropeanController extends controller_1.SessionController {
     }
     async getVehicleHttpService() {
         await this.checkControlToken();
-        return got_1.default.extend({
+        return got.extend({
             baseUrl: this.environment.baseUrl,
             headers: {
                 ...this.defaultHeaders,
@@ -256,7 +250,7 @@ class EuropeanController extends controller_1.SessionController {
     }
     async getApiHttpService() {
         await this.refreshAccessToken();
-        return got_1.default.extend({
+        return got.extend({
             baseUrl: this.environment.baseUrl,
             headers: {
                 ...this.defaultHeaders,
@@ -275,5 +269,4 @@ class EuropeanController extends controller_1.SessionController {
         };
     }
 }
-exports.EuropeanController = EuropeanController;
 //# sourceMappingURL=european.controller.js.map
