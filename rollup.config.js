@@ -1,57 +1,35 @@
+import { readFileSync } from 'fs';
+import typescript from 'rollup-plugin-typescript2';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import typescript from 'rollup-plugin-typescript2';
 import terser from '@rollup/plugin-terser';
-import fs from 'fs';
+// import pkg from './package.json';
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
-// package.json ohne JSON-Import laden
-const pkg = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url)));
 
-export default [
-  // ESM build
-  {
-    input: 'src/index.ts',
-    output: {
-      file: pkg.module,
-      format: 'es',
-      sourcemap: true
-    },
-    plugins: [
-      resolve(),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        useTsconfigDeclarationDir: true
-      }),
-      terser()
-    ],
-    external: [
-      ...Object.keys(pkg.dependencies || {}),
-      ...Object.keys(pkg.peerDependencies || {})
-    ]
-  },
-
-  // CommonJS build
-  {
-    input: 'src/index.ts',
-    output: {
-      file: pkg.main,
+export default {
+  input: 'src/index.ts',
+  output: [
+    {
       format: 'cjs',
-      sourcemap: true,
-      exports: 'auto'
+      name: 'index',
+      file: 'dist/index.cjs',
+      exports: 'named',
+      banner: '/* @preserve bluelinky / MIT License / https://github.com/Hacksore/bluelinky */',
     },
-    plugins: [
-      resolve(),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        useTsconfigDeclarationDir: true
-      }),
-      terser()
-    ],
-    external: [
-      ...Object.keys(pkg.dependencies || {}),
-      ...Object.keys(pkg.peerDependencies || {})
-    ]
-  }
-];
+    {
+      format: 'esm',
+      name: 'index',
+      exports: 'named',
+      file: 'dist/index.esm.js',
+      banner: '/* @preserve bluelinky / MIT License / https://github.com/Hacksore/bluelinky */',
+    },
+  ],
+  external: [...Object.keys(pkg.dependencies || {}), 'events', 'url', 'fs', 'util'],
+  plugins: [
+    resolve({ preferBuiltins: true }),
+    typescript({}),
+    commonjs(),
+    terser(),
+  ],
+};

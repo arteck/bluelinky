@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBrandEnvironment = void 0;
 const getHyundaiEnvironment = () => {
     const host = 'api.telematics.hyundaiusa.com';
     const baseUrl = `https://${host}`;
@@ -21,7 +24,7 @@ const getKiaEnvironment = () => {
         clientSecret: '98er-w34rf-ibf3-3f6h',
     };
 };
-export const getBrandEnvironment = (brand) => {
+const getBrandEnvironment = (brand) => {
     switch (brand) {
         case 'hyundai':
             return Object.freeze(getHyundaiEnvironment());
@@ -31,4 +34,5 @@ export const getBrandEnvironment = (brand) => {
             throw new Error(`Constructor ${brand} is not managed.`);
     }
 };
+exports.getBrandEnvironment = getBrandEnvironment;
 //# sourceMappingURL=america.js.map

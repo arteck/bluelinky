@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.addMinutes = exports.parseDate = exports.tempCodeToCelsius = exports.celciusToTempCode = void 0;
 const dec2hexString = (dec) => '0x' + dec.toString(16).substr(-4).toUpperCase();
 const floatRange = (start, stop, step) => {
     const ranges = [];
@@ -32,7 +35,7 @@ const REGION_STEP_RANGES = {
 // Converts Kia's stupid temp codes to celsius
 // From what I can tell it uses a hex index on a list of temperatures starting at 14c ending at 30c with an added H on the end,
 // I'm thinking it has to do with Heat/Cool H/C but needs to be tested, while the car is off, it defaults to 01H
-export const celciusToTempCode = (region, temperature) => {
+const celciusToTempCode = (region, temperature) => {
     // create a range of floats
     const { start, end, step } = REGION_STEP_RANGES[region];
     const tempRange = floatRange(start, end, step);
@@ -44,7 +47,8 @@ export const celciusToTempCode = (region, temperature) => {
     // this needs more testing I guess :P
     return `${hexCode.split('x')[1].toUpperCase()}H`.padStart(3, '0');
 };
-export const tempCodeToCelsius = (region, code) => {
+exports.celciusToTempCode = celciusToTempCode;
+const tempCodeToCelsius = (region, code) => {
     // create a range
     const { start, end, step } = REGION_STEP_RANGES[region];
     const tempRange = floatRange(start, end, step);
@@ -53,12 +57,13 @@ export const tempCodeToCelsius = (region, code) => {
     // return the relevant celsius temp
     return tempRange[tempIndex];
 };
+exports.tempCodeToCelsius = tempCodeToCelsius;
 /**
  * Parses an API date string
  * @param str the date in yyyyMMdd or yyyyMMddHHmmss format
  * @returns The parsed date
  */
-export const parseDate = (str) => {
+const parseDate = (str) => {
     const year = parseInt(str.substring(0, 4));
     const month = parseInt(str.substring(4, 6));
     if (str.length <= 6) {
@@ -73,6 +78,7 @@ export const parseDate = (str) => {
     const second = parseInt(str.substring(12, 14));
     return new Date(year, month - 1, day, hour, minute, second);
 };
+exports.parseDate = parseDate;
 const MILISECONDS_PER_SECOND = 1000;
 const MILISECONDS_PER_MINUTE = MILISECONDS_PER_SECOND * 60;
 /**
@@ -81,7 +87,8 @@ const MILISECONDS_PER_MINUTE = MILISECONDS_PER_SECOND * 60;
  * @param minutes The number of minutes to add
  * @returns The updated date
  */
-export const addMinutes = (date, minutes) => {
+const addMinutes = (date, minutes) => {
     return new Date(date.getTime() + minutes * MILISECONDS_PER_MINUTE);
 };
+exports.addMinutes = addMinutes;
 //# sourceMappingURL=util.js.map

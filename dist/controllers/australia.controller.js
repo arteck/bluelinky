@@ -1,27 +1,33 @@
-import got from 'got';
-import AustraliaVehicle from '../vehicles/australia.vehicle';
-import { getBrandEnvironment } from './../constants/australia';
-import { SessionController } from './controller';
-import { URLSearchParams } from 'url';
-import logger from '../logger';
-import { asyncMap, manageBluelinkyError, uuidV4 } from '../tools/common.tools';
-import { AustraliaAuthStrategy } from './authStrategies/australia.authStrategy';
-export class AustraliaController extends SessionController {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AustraliaController = void 0;
+const got_1 = __importDefault(require("got"));
+const australia_vehicle_1 = __importDefault(require("../vehicles/australia.vehicle"));
+const australia_1 = require("./../constants/australia");
+const controller_1 = require("./controller");
+const url_1 = require("url");
+const logger_1 = __importDefault(require("../logger"));
+const common_tools_1 = require("../tools/common.tools");
+const australia_authStrategy_1 = require("./authStrategies/australia.authStrategy");
+class AustraliaController extends controller_1.SessionController {
     constructor(userConfig) {
         super(userConfig);
         this.session = {
             accessToken: undefined,
             refreshToken: undefined,
             controlToken: undefined,
-            deviceId: uuidV4(),
+            deviceId: (0, common_tools_1.uuidV4)(),
             tokenExpiresAt: 0,
             controlTokenExpiresAt: 0,
         };
         this.vehicles = [];
-        this.session.deviceId = uuidV4();
-        this._environment = getBrandEnvironment(userConfig);
-        this.authStrategy = new AustraliaAuthStrategy(this._environment);
-        logger.debug('AU Controller created');
+        this.session.deviceId = (0, common_tools_1.uuidV4)();
+        this._environment = (0, australia_1.getBrandEnvironment)(userConfig);
+        this.authStrategy = new australia_authStrategy_1.AustraliaAuthStrategy(this._environment);
+        logger_1.default.debug('AU Controller created');
     }
     get environment() {
         return this._environment;
@@ -29,19 +35,19 @@ export class AustraliaController extends SessionController {
     async refreshAccessToken() {
         const shouldRefreshToken = Math.floor(Date.now() / 1000 - this.session.tokenExpiresAt) >= -10;
         if (!this.session.refreshToken) {
-            logger.debug('Need refresh token to refresh access token. Use login()');
+            logger_1.default.debug('Need refresh token to refresh access token. Use login()');
             return 'Need refresh token to refresh access token. Use login()';
         }
         if (!shouldRefreshToken) {
-            logger.debug('Token not expired, no need to refresh');
+            logger_1.default.debug('Token not expired, no need to refresh');
             return 'Token not expired, no need to refresh';
         }
-        const formData = new URLSearchParams();
+        const formData = new url_1.URLSearchParams();
         formData.append('grant_type', 'refresh_token');
         formData.append('redirect_uri', 'https://www.getpostman.com/oauth2/callback'); // Oversight from Hyundai developers
         formData.append('refresh_token', this.session.refreshToken);
         try {
-            const response = await got(this.environment.endpoints.token, {
+            const response = await (0, got_1.default)(this.environment.endpoints.token, {
                 method: 'POST',
                 headers: {
                     'Authorization': this.environment.basicToken,
@@ -55,7 +61,7 @@ export class AustraliaController extends SessionController {
                 throwHttpErrors: false,
             });
             if (response.statusCode !== 200) {
-                logger.debug(`Refresh token failed: ${response.body}`);
+                logger_1.default.debug(`Refresh token failed: ${response.body}`);
                 return `Refresh token failed: ${response.body}`;
             }
             const responseBody = JSON.parse(response.body);
@@ -63,9 +69,9 @@ export class AustraliaController extends SessionController {
             this.session.tokenExpiresAt = Math.floor(Date.now() / 1000 + responseBody.expires_in);
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AustraliaController.refreshAccessToken');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AustraliaController.refreshAccessToken');
         }
-        logger.debug('Token refreshed');
+        logger_1.default.debug('Token refreshed');
         return 'Token refreshed';
     }
     async enterPin() {
@@ -73,7 +79,7 @@ export class AustraliaController extends SessionController {
             throw 'Token not set';
         }
         try {
-            const response = await got(`${this.environment.baseUrl}/api/v1/user/pin`, {
+            const response = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/user/pin`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': this.session.accessToken,
@@ -90,7 +96,7 @@ export class AustraliaController extends SessionController {
             return 'PIN entered OK, The pin is valid for 10 minutes';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AustraliaController.pin');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AustraliaController.pin');
         }
     }
     async login() {
@@ -100,7 +106,7 @@ export class AustraliaController extends SessionController {
             }
             let authResult = null;
             try {
-                logger.debug(`@AustraliaController.login: Trying to sign in with ${this.authStrategy.name}`);
+                logger_1.default.debug(`@AustraliaController.login: Trying to sign in with ${this.authStrategy.name}`);
                 authResult = await this.authStrategy.login({
                     password: this.userConfig.password,
                     username: this.userConfig.username,
@@ -109,9 +115,9 @@ export class AustraliaController extends SessionController {
             catch (e) {
                 throw new Error(`@AustraliaController.login: sign in with ${this.authStrategy.name} failed with error ${e.toString()}`);
             }
-            logger.debug('@AustraliaController.login: Authenticated properly with user and password');
+            logger_1.default.debug('@AustraliaController.login: Authenticated properly with user and password');
             const genRanHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-            const notificationReponse = await got(`${this.environment.baseUrl}/api/v1/spa/notifications/register`, {
+            const notificationReponse = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/notifications/register`, {
                 method: 'POST',
                 headers: {
                     'ccsp-service-id': this.environment.clientId,
@@ -133,12 +139,12 @@ export class AustraliaController extends SessionController {
             if (notificationReponse) {
                 this.session.deviceId = notificationReponse.body.resMsg.deviceId;
             }
-            logger.debug('@AustraliaController.login: Device registered');
-            const formData = new URLSearchParams();
+            logger_1.default.debug('@AustraliaController.login: Device registered');
+            const formData = new url_1.URLSearchParams();
             formData.append('grant_type', 'authorization_code');
             formData.append('redirect_uri', this.environment.endpoints.redirectUri);
             formData.append('code', authResult.code);
-            const response = await got(this.environment.endpoints.token, {
+            const response = await (0, got_1.default)(this.environment.endpoints.token, {
                 method: 'POST',
                 headers: {
                     'Authorization': this.environment.basicToken,
@@ -163,11 +169,11 @@ export class AustraliaController extends SessionController {
                 this.session.refreshToken = responseBody.refresh_token;
                 this.session.tokenExpiresAt = Math.floor(Date.now() / 1000 + responseBody.expires_in);
             }
-            logger.debug('@AustraliaController.login: Session defined properly');
+            logger_1.default.debug('@AustraliaController.login: Session defined properly');
             return 'Login success';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AustraliaController.login');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AustraliaController.login');
         }
     }
     async logout() {
@@ -178,7 +184,7 @@ export class AustraliaController extends SessionController {
             throw 'Token not set';
         }
         try {
-            const response = await got(`${this.environment.baseUrl}/api/v1/spa/vehicles`, {
+            const response = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/vehicles`, {
                 method: 'GET',
                 headers: {
                     ...this.defaultHeaders,
@@ -186,8 +192,8 @@ export class AustraliaController extends SessionController {
                 },
                 json: true,
             });
-            this.vehicles = await asyncMap(response.body.resMsg.vehicles, async (v) => {
-                const vehicleProfileReponse = await got(`${this.environment.baseUrl}/api/v1/spa/vehicles/${v.vehicleId}/profile`, {
+            this.vehicles = await (0, common_tools_1.asyncMap)(response.body.resMsg.vehicles, async (v) => {
+                const vehicleProfileReponse = await (0, got_1.default)(`${this.environment.baseUrl}/api/v1/spa/vehicles/${v.vehicleId}/profile`, {
                     method: 'GET',
                     headers: {
                         ...this.defaultHeaders,
@@ -205,12 +211,12 @@ export class AustraliaController extends SessionController {
                     vin: vehicleProfile.vinInfo[0].basic.vin,
                     generation: vehicleProfile.vinInfo[0].basic.modelYear,
                 };
-                logger.debug(`@AustraliaController.getVehicles: Added vehicle ${vehicleConfig.id}`);
-                return new AustraliaVehicle(vehicleConfig, this);
+                logger_1.default.debug(`@AustraliaController.getVehicles: Added vehicle ${vehicleConfig.id}`);
+                return new australia_vehicle_1.default(vehicleConfig, this);
             });
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AustraliaController.getVehicles');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AustraliaController.getVehicles');
         }
         return this.vehicles;
     }
@@ -224,7 +230,7 @@ export class AustraliaController extends SessionController {
     }
     async getVehicleHttpService() {
         await this.checkControlToken();
-        return got.extend({
+        return got_1.default.extend({
             baseUrl: this.environment.baseUrl,
             headers: {
                 ...this.defaultHeaders,
@@ -236,7 +242,7 @@ export class AustraliaController extends SessionController {
     }
     async getApiHttpService() {
         await this.refreshAccessToken();
-        return got.extend({
+        return got_1.default.extend({
             baseUrl: this.environment.baseUrl,
             headers: {
                 ...this.defaultHeaders,
@@ -255,4 +261,5 @@ export class AustraliaController extends SessionController {
         };
     }
 }
+exports.AustraliaController = AustraliaController;
 //# sourceMappingURL=australia.controller.js.map

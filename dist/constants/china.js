@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBrandEnvironment = void 0;
 const getEndpoints = (baseUrl, clientId) => ({
     session: `${baseUrl}/api/v1/user/oauth2/authorize?response_type=code&state=test&client_id=${clientId}&redirect_uri=${baseUrl}:443/api/v1/user/oauth2/redirect`,
     login: `${baseUrl}/api/v1/user/signin`,
@@ -43,7 +46,7 @@ const getKiaEnvironment = () => {
         pushRegId: 'ogc+GB5gom7zDEQjPhb3lP+bjjM=DG2rQ9Zuq0otwOU7n9y08LKjYpo=',
     };
 };
-export const getBrandEnvironment = ({ brand, }) => {
+const getBrandEnvironment = ({ brand, }) => {
     switch (brand) {
         case 'hyundai':
             return Object.freeze(getHyundaiEnvironment());
@@ -53,4 +56,5 @@ export const getBrandEnvironment = ({ brand, }) => {
             throw new Error(`Constructor ${brand} is not managed.`);
     }
 };
+exports.getBrandEnvironment = getBrandEnvironment;
 //# sourceMappingURL=china.js.map

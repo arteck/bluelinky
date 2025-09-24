@@ -1,15 +1,21 @@
-import got from 'got';
-import AmericanVehicle from '../vehicles/american.vehicle';
-import { SessionController } from './controller';
-import logger from '../logger';
-import { getBrandEnvironment } from '../constants/america';
-import { manageBluelinkyError } from '../tools/common.tools';
-export class AmericanController extends SessionController {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AmericanController = void 0;
+const got_1 = __importDefault(require("got"));
+const american_vehicle_1 = __importDefault(require("../vehicles/american.vehicle"));
+const controller_1 = require("./controller");
+const logger_1 = __importDefault(require("../logger"));
+const america_1 = require("../constants/america");
+const common_tools_1 = require("../tools/common.tools");
+class AmericanController extends controller_1.SessionController {
     constructor(userConfig) {
         super(userConfig);
         this.vehicles = [];
-        this._environment = getBrandEnvironment(userConfig.brand);
-        logger.debug('US Controller created');
+        this._environment = (0, america_1.getBrandEnvironment)(userConfig.brand);
+        logger_1.default.debug('US Controller created');
     }
     get environment() {
         return this._environment;
@@ -18,8 +24,8 @@ export class AmericanController extends SessionController {
         const shouldRefreshToken = Math.floor(Date.now() / 1000 - this.session.tokenExpiresAt) >= -10;
         try {
             if (this.session.refreshToken && shouldRefreshToken) {
-                logger.debug('refreshing token');
-                const response = await got(`${this.environment.baseUrl}/v2/ac/oauth/token/refresh`, {
+                logger_1.default.debug('refreshing token');
+                const response = await (0, got_1.default)(`${this.environment.baseUrl}/v2/ac/oauth/token/refresh`, {
                     method: 'POST',
                     body: {
                         'refresh_token': this.session.refreshToken,
@@ -31,25 +37,25 @@ export class AmericanController extends SessionController {
                     },
                     json: true,
                 });
-                logger.debug(response.body);
+                logger_1.default.debug(response.body);
                 this.session.accessToken = response.body.access_token;
                 this.session.refreshToken = response.body.refresh_token;
                 this.session.tokenExpiresAt = Math.floor(+new Date() / 1000 + parseInt(response.body.expires_in));
-                logger.debug('Token refreshed');
+                logger_1.default.debug('Token refreshed');
                 return 'Token refreshed';
             }
-            logger.debug('Token not expired, no need to refresh');
+            logger_1.default.debug('Token not expired, no need to refresh');
             return 'Token not expired, no need to refresh';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AmericanController.refreshAccessToken');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AmericanController.refreshAccessToken');
         }
     }
     // TODO: come up with a better return value?
     async login() {
-        logger.debug('Logging in to the API');
+        logger_1.default.debug('Logging in to the API');
         try {
-            const response = await got(`${this.environment.baseUrl}/v2/ac/oauth/token`, {
+            const response = await (0, got_1.default)(`${this.environment.baseUrl}/v2/ac/oauth/token`, {
                 method: 'POST',
                 body: {
                     username: this.userConfig.username,
@@ -62,7 +68,7 @@ export class AmericanController extends SessionController {
                 },
                 json: true,
             });
-            logger.debug(response.body);
+            logger_1.default.debug(response.body);
             if (response.statusCode !== 200) {
                 return 'login bad';
             }
@@ -72,7 +78,7 @@ export class AmericanController extends SessionController {
             return 'login good';
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AmericanController.login');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AmericanController.login');
         }
     }
     async logout() {
@@ -80,7 +86,7 @@ export class AmericanController extends SessionController {
     }
     async getVehicles() {
         try {
-            const response = await got(`${this.environment.baseUrl}/ac/v2/enrollment/details/${this.userConfig.username}`, {
+            const response = await (0, got_1.default)(`${this.environment.baseUrl}/ac/v2/enrollment/details/${this.userConfig.username}`, {
                 method: 'GET',
                 headers: {
                     'access_token': this.session.accessToken,
@@ -96,6 +102,7 @@ export class AmericanController extends SessionController {
                 this.vehicles = [];
                 return this.vehicles;
             }
+            // logger.debug(`Found vehicles on the account:: `, JSON.stringify(data.enrolledVehicleDetails));
             this.vehicles = data.enrolledVehicleDetails.map(vehicle => {
                 const vehicleInfo = vehicle.vehicleDetails;
                 const vehicleConfig = {
@@ -105,15 +112,22 @@ export class AmericanController extends SessionController {
                     regDate: vehicleInfo.enrollmentDate,
                     brandIndicator: vehicleInfo.brandIndicator,
                     regId: vehicleInfo.regid,
-                    generation: vehicleInfo.vehicleGeneration,
+                    generation: vehicleInfo.vehicleGeneration
                 };
-                return new AmericanVehicle(vehicleConfig, this);
+                if (vehicleInfo.evStatus == 'N') {
+                    vehicleConfig.engineType = 'ICE'; // Internal Combustion Engine
+                }
+                else if (vehicleInfo.evStatus == 'E') {
+                    vehicleConfig.engineType = 'EV'; // Electric Vehicle
+                }
+                return new american_vehicle_1.default(vehicleConfig, this);
             });
             return this.vehicles;
         }
         catch (err) {
-            throw manageBluelinkyError(err, 'AmericanController.getVehicles');
+            throw (0, common_tools_1.manageBluelinkyError)(err, 'AmericanController.getVehicles');
         }
     }
 }
+exports.AmericanController = AmericanController;
 //# sourceMappingURL=american.controller.js.map

@@ -343,13 +343,20 @@ export interface VehicleCommandResponse {
     responseCode: number;
     responseDesc: string;
 }
+export type SeatHeaterVentInfo = {
+    driverSeat?: number;
+    passengerSeat?: number;
+    rearLeftSeat?: number;
+    rearRightSeat?: number;
+} | null;
 export interface VehicleStartOptions {
     hvac: boolean | string;
     duration: number;
     temperature: number;
     defrost: boolean | string;
-    heatedFeatures: boolean | string;
+    heatedFeatures: number | boolean;
     unit?: 'C' | 'F';
+    seatClimateSettings?: SeatHeaterVentInfo;
 }
 export declare enum VehicleWindowState {
     CLOSED = 0,
@@ -372,6 +379,7 @@ export interface VehicleRegisterOptions {
     id: string;
     generation: string;
     ccuCCS2ProtocolSupport?: boolean;
+    engineType?: 'ICE' | 'EV';
 }
 export type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;

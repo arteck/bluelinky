@@ -12,14 +12,21 @@ export interface EuropeBlueLinkyConfig extends BlueLinkyConfig {
 }
 export declare class EuropeanController extends SessionController<EuropeBlueLinkyConfig> {
     private _environment;
-    private authStrategies;
+    private LOGIN_FORM_HOST;
+    private PUSH_TYPE;
     constructor(userConfig: EuropeBlueLinkyConfig);
     get environment(): EuropeanBrandEnvironment;
     session: Session;
     private vehicles;
-    refreshAccessToken(): Promise<string>;
+    private getDeviceId;
+    private setSessionLanguage;
     enterPin(): Promise<string>;
     login(): Promise<string>;
+    private getAuthCodeDirect;
+    private getAuthCodeViaForm;
+    private exchangeAuthCodeForToken;
+    refreshAccessToken(): Promise<string>;
+    private fetchRefreshToken;
     logout(): Promise<string>;
     getVehicles(): Promise<Array<Vehicle>>;
     private checkControlToken;

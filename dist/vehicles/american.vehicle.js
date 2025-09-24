@@ -1,15 +1,21 @@
-import got from 'got';
-import logger from '../logger';
-import { REGIONS, DEFAULT_VEHICLE_STATUS_OPTIONS } from '../constants';
-import { Vehicle } from './vehicle';
-import { URLSearchParams } from 'url';
-export default class AmericanVehicle extends Vehicle {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const got_1 = __importDefault(require("got"));
+const logger_1 = __importDefault(require("../logger"));
+const constants_1 = require("../constants");
+const vehicle_1 = require("./vehicle");
+const url_1 = require("url");
+const seatheatvent_1 = require("../constants/seatheatvent");
+class AmericanVehicle extends vehicle_1.Vehicle {
     constructor(vehicleConfig, controller) {
         super(vehicleConfig, controller);
         this.vehicleConfig = vehicleConfig;
         this.controller = controller;
-        this.region = REGIONS.US;
-        logger.debug(`US Vehicle ${this.vehicleConfig.regId} created`);
+        this.region = constants_1.REGIONS.US;
+        logger_1.default.debug(`US Vehicle ${this.vehicleConfig.regId} created`);
     }
     getDefaultHeaders() {
         return {
@@ -76,17 +82,81 @@ export default class AmericanVehicle extends Vehicle {
         };
     }
     async start(startConfig) {
+        logger_1.default.debug('try start: ', JSON.stringify(startConfig));
+        let seatClimateOptions = null;
+        let gen2ev = false;
         const mergedConfig = {
             ...{
                 hvac: false,
                 duration: 10,
                 temperature: 70,
                 defrost: false,
-                heatedFeatures: false,
+                heatedFeatures: 0,
                 unit: 'F',
+                seatClimateSettings: seatClimateOptions
             },
             ...startConfig,
         };
+        logger_1.default.debug(`mergedConfig:  ${JSON.stringify(mergedConfig)}`);
+        const advClimateOptionValidator = (0, seatheatvent_1.advClimateValidator)(this.userConfig.brand, this.region);
+        logger_1.default.debug(`advClimateOptionValidator: ${JSON.stringify(advClimateOptionValidator)}`);
+        let start_url = 'ac/v2/rcs/rsc/start';
+        if (this.vehicleConfig.engineType === 'EV') {
+            start_url = 'ac/v2/evc/fatc/start';
+            if (this.vehicleConfig.generation == '2') {
+                gen2ev = true;
+                logger_1.default.debug('gen2 EV vehicle - seat and climate duration options not supported');
+            }
+        }
+        logger_1.default.debug(`Using start URL: ${start_url}`);
+        //keeping heate dFeatures backwards compatible
+        if (typeof mergedConfig.heatedFeatures === 'boolean') {
+            mergedConfig.heatedFeatures = mergedConfig.heatedFeatures ? 1 : 0;
+            logger_1.default.warn('heatedFeatures was boolean; is actually enum; please update code to use enum values');
+        }
+        else if (typeof mergedConfig.heatedFeatures === 'number') {
+            if (advClimateOptionValidator.validHeats.includes(mergedConfig.heatedFeatures)) {
+                mergedConfig.heatedFeatures = advClimateOptionValidator.validHeats[mergedConfig.heatedFeatures];
+            }
+            else {
+                logger_1.default.warn('heatedFeatures is not a valid enum, defaulting to 0');
+                mergedConfig.heatedFeatures = 0; // default to 0 if not valid
+            }
+        }
+        else {
+            logger_1.default.warn('heatedFeatures is not a number or boolean, defaulting to 0');
+            mergedConfig.heatedFeatures = 0;
+        }
+        //processing seatClimateSettings
+        const result = {};
+        if (mergedConfig.seatClimateSettings && !gen2ev) {
+            const controlled_seats = Object.keys(mergedConfig.seatClimateSettings);
+            if (controlled_seats.length > 0) {
+                logger_1.default.debug(`Seat climate settings found: ${JSON.stringify(mergedConfig.seatClimateSettings)}`);
+                controlled_seats.forEach((seat) => {
+                    const targetSeat = advClimateOptionValidator.validSeats[seat] ? advClimateOptionValidator.validSeats[seat] : null;
+                    const seatStatus = advClimateOptionValidator.validStatus.includes(mergedConfig.seatClimateSettings[seat]) ? mergedConfig.seatClimateSettings[seat] : null;
+                    if (targetSeat && seatStatus) {
+                        result[targetSeat] = seatStatus;
+                    }
+                    else {
+                        logger_1.default.warn(`invalid seat / seat climate option for ${seat}`);
+                    }
+                });
+                // logger.debug(`Processed Climate Seat Options result: ${JSON.stringify(result)}`);
+            }
+            else {
+                logger_1.default.warn('invalid seatClimateSettings provided, defaulting to null');
+            }
+        }
+        else {
+            logger_1.default.debug('no seatClimateSettings found / gen 2 ev');
+        }
+        // if after processing result is empty, default seatClimateOptions to null
+        Object.keys(result).length > 0 ? seatClimateOptions = result : seatClimateOptions = null;
+        logger_1.default.debug(`Processed seatClimateOptions: ${JSON.stringify(seatClimateOptions)}`);
+        // using ... spread syntax to conditionally build body at the end 
+        // avoids typescript's *ahem* nuances with changing things conditionally
         const body = {
             'Ims': 0,
             'airCtrl': +mergedConfig.hvac, // use the unary method to convert to int
@@ -95,13 +165,16 @@ export default class AmericanVehicle extends Vehicle {
                 'value': `${mergedConfig.temperature}`,
             },
             'defrost': mergedConfig.defrost,
-            'heating1': +mergedConfig.heatedFeatures, // use the unary method to convert to int
-            'igniOnDuration': mergedConfig.duration,
-            'seatHeaterVentInfo': null, // need to figure out what this is
+            'heating1': mergedConfig.heatedFeatures, // default to Off if not valid
+            ...(!gen2ev && {
+                'igniOnDuration': mergedConfig.duration,
+                'seatHeaterVentInfo': seatClimateOptions, // figured out what it is
+            }),
             'username': this.userConfig.username,
             'vin': this.vehicleConfig.vin,
         };
-        const response = await this._request('/ac/v2/rcs/rsc/start', {
+        logger_1.default.debug(`starting car with payload: ${JSON.stringify(body)}`);
+        const response = await this._request(start_url, {
             method: 'POST',
             headers: {
                 ...this.getDefaultHeaders(),
@@ -111,8 +184,10 @@ export default class AmericanVehicle extends Vehicle {
             json: true,
         });
         if (response.statusCode === 200) {
+            logger_1.default.debug(`Vehicle started successfully: ${response.body}`);
             return 'Vehicle started!';
         }
+        logger_1.default.error(`Failed to start vehicle: ${response.body}`);
         return 'Failed to start vehicle';
     }
     async stop() {
@@ -130,7 +205,7 @@ export default class AmericanVehicle extends Vehicle {
     }
     async status(input) {
         const statusConfig = {
-            ...DEFAULT_VEHICLE_STATUS_OPTIONS,
+            ...constants_1.DEFAULT_VEHICLE_STATUS_OPTIONS,
             ...input,
         };
         const response = await this._request('/ac/v2/rcs/rvs/vehicleStatus', {
@@ -185,7 +260,7 @@ export default class AmericanVehicle extends Vehicle {
         return this._status;
     }
     async unlock() {
-        const formData = new URLSearchParams();
+        const formData = new url_1.URLSearchParams();
         formData.append('userName', this.userConfig.username || '');
         formData.append('vin', this.vehicleConfig.vin);
         const response = await this._request('/ac/v2/rcs/rdo/on', {
@@ -199,7 +274,7 @@ export default class AmericanVehicle extends Vehicle {
         return 'Something went wrong!';
     }
     async lock() {
-        const formData = new URLSearchParams();
+        const formData = new url_1.URLSearchParams();
         formData.append('userName', this.userConfig.username || '');
         formData.append('vin', this.vehicleConfig.vin);
         const response = await this._request('/ac/v2/rcs/rdo/off', {
@@ -217,17 +292,17 @@ export default class AmericanVehicle extends Vehicle {
             method: 'POST',
         });
         if (response.statusCode === 200) {
-            logger.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
+            logger_1.default.debug(`Send start charge command to Vehicle ${this.vehicleConfig.id}`);
             return 'Start charge successful';
         }
         throw 'Something went wrong!';
     }
     async stopCharge() {
-        const response = await got(`/api/v2/spa/vehicles/${this.vehicleConfig.id}/control/charge`, {
+        const response = await (0, got_1.default)(`/api/v2/spa/vehicles/${this.vehicleConfig.id}/control/charge`, {
             method: 'POST',
         });
         if (response.statusCode === 200) {
-            logger.debug(`Send stop charge command to vehicle ${this.vehicleConfig.id}`);
+            logger_1.default.debug(`Send stop charge command to vehicle ${this.vehicleConfig.id}`);
             return 'Stop charge successful';
         }
         throw 'Something went wrong!';
@@ -239,14 +314,15 @@ export default class AmericanVehicle extends Vehicle {
         await this.controller.refreshAccessToken();
         // if we refreshed token make sure to apply it to the request
         options.headers.access_token = this.controller.session.accessToken;
-        const response = await got(`${this.controller.environment.baseUrl}/${service}`, {
+        const response = await (0, got_1.default)(`${this.controller.environment.baseUrl}/${service}`, {
             throwHttpErrors: false,
             ...options,
         });
         if (response?.body) {
-            logger.debug(response.body);
+            logger_1.default.debug(response.body);
         }
         return response;
     }
 }
+exports.default = AmericanVehicle;
 //# sourceMappingURL=american.vehicle.js.map
