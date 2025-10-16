@@ -37,12 +37,11 @@ class EuropeanController extends controller_1.SessionController {
         // Initialize brand-specific constants (URLs, IDs, etc.)
         if (this.userConfig.brand === 'kia') {
             this.LOGIN_FORM_HOST = 'https://idpconnect-eu.kia.com';
-            this.PUSH_TYPE = 'APNS';
         }
         else {
-            this.LOGIN_FORM_HOST = 'https://eu-account.hyundai.com';
-            this.PUSH_TYPE = 'GCM';
+            this.LOGIN_FORM_HOST = 'https://idpconnect-eu.hyundai.com';
         }
+        this.PUSH_TYPE = 'APNS';
         logger_1.default.debug('EU Controller created');
     }
     get environment() {
@@ -117,47 +116,45 @@ class EuropeanController extends controller_1.SessionController {
     }
     async login() {
         //const stamp = await this.environment.stamp();
-        const username = this.userConfig.username !== undefined ? this.userConfig.username : '';
-        const password = this.userConfig.password !== undefined ? this.userConfig.password : '';
+        //const username = this.userConfig.username !== undefined ? this.userConfig.username : '';
+        //const password = this.userConfig.password !== undefined ? this.userConfig.password : '';
         await this.getDeviceId();
         //const sessionCookies = await this.getSessionCookies();
         await this.setSessionLanguage();
-        if (this.userConfig.brand === 'kia') {
-            // 📌 Kia EU: Use password as a refresh token to get access token directly
-            const refreshToken = this.userConfig.password;
-            this.session.refreshToken = refreshToken;
-            await this.refreshAccessToken();
-            return 'OK';
-        }
+        // 📌 Both brands: Use password as a refresh token to get access token directly
+        const refreshToken = this.userConfig.password;
+        this.session.refreshToken = refreshToken;
+        await this.refreshAccessToken();
+        return 'OK';
+        /*
         // Hyundai or Genesis:
-        let authorizationCode = null;
+        let authorizationCode: string | null = null;
         try {
-            authorizationCode = await this.getAuthCodeDirect(username, password);
-        }
-        catch (err) {
-            authorizationCode = await this.getAuthCodeViaForm(username, password);
+          authorizationCode = await this.getAuthCodeDirect(username, password);
+        } catch (err) {
+          authorizationCode = await this.getAuthCodeViaForm(username, password);
         }
         if (!authorizationCode) {
-            throw new Error('Login Failed: Authorization code not obtained');
+          throw new Error('Login Failed: Authorization code not obtained');
         }
+    
         // Exchange authorization code for tokens
         const tokenData = await this.exchangeAuthCodeForToken(authorizationCode);
         // Ensure we have a refresh token. Hyundai’s first token response may not include one, so fetch if needed.
         let refreshToken = tokenData.refreshToken;
         if (this.userConfig.brand === 'hyundai') {
-            if (!refreshToken) {
-                refreshToken = await this.fetchRefreshToken();
-            }
-        }
-        else {
-            // For Genesis, if not provided, we reuse the auth code as refresh (rarely needed).
-            if (!refreshToken)
-                refreshToken = authorizationCode;
+          if (!refreshToken) {
+            refreshToken = await this.fetchRefreshToken();
+          }
+        } else {
+          // For Genesis, if not provided, we reuse the auth code as refresh (rarely needed).
+          if (!refreshToken) refreshToken = authorizationCode;
         }
         this.session.accessToken = tokenData.accessToken;
-        this.session.refreshToken = refreshToken;
+        this.session.refreshToken = refreshToken!;
         this.session.tokenExpiresAt = Math.floor(Date.now() / 1000 + tokenData.expiresIn);
         return 'OK';
+        */
     }
     async getAuthCodeDirect(username, password) {
         if (this.userConfig.brand === 'hyundai') {
