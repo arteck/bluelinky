@@ -1,16 +1,12 @@
 {
   "name": "bluelinky",
-  "version": "10.0.2",
+  "version": "10.0.0",
   "description": "An unofficial nodejs API wrapper for Hyundai bluelink",
   "main": "dist/index.cjs",
   "module": "dist/index.esm.js",
   "type": "module",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepare": "tsc",
-    "build:cjs_iobroker": "rimraf dist && tsc -p tsconfig.cjs.json",
-    "build:esm": "rimraf dist && tsc -p tsconfig.json",
-    "build:both": "rimraf dist && tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
     "build": "rimraf dist/ && rollup -c rollup.config.js",
     "dev": "rollup -w -c rollup.config.js",
     "lint": "eslint ./src --ext .js,.jsx,.ts,.tsx",
@@ -27,6 +23,7 @@
   "author": "Hacksore",
   "license": "MIT",
   "dependencies": {
+    "base64-js": "^1.5.1",
     "got": "^9.6.0",
     "push-receiver": "^2.1.1",
     "tough-cookie": "^4.0.0",
@@ -68,4 +65,3 @@
     "typescript": "^5.4.3"
   }
 }
-

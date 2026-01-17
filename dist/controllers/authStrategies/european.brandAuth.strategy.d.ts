@@ -1,6 +1,6 @@
 import { CookieJar } from 'tough-cookie';
 import { EULanguages, EuropeanBrandEnvironment } from '../../constants/europe';
-import { AuthStrategy, Code } from './authStrategy';
+import { AuthStrategy, Code, Token } from './authStrategy';
 export declare class EuropeanBrandAuthStrategy implements AuthStrategy {
     private readonly environment;
     private readonly language;
@@ -12,7 +12,7 @@ export declare class EuropeanBrandAuthStrategy implements AuthStrategy {
     }, options?: {
         cookieJar?: CookieJar;
     }): Promise<{
-        code: Code;
+        code: Code | Token;
         cookies: CookieJar;
     }>;
 }

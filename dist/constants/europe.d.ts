@@ -7,27 +7,26 @@ export interface EuropeanBrandEnvironment {
     brand: Brand;
     host: string;
     baseUrl: string;
-    clientId: string;
-    appId: string;
-    endpoints: {
-        integration: string;
-        silentSignIn: string;
-        session: string;
-        login: string;
-        language: string;
-        redirectUri: string;
-        token: string;
-    };
+    ccspServiceID: string;
+    ccspServiceSecret: string;
+    ccspApplicationID: string;
+    cfb: string;
     basicToken: string;
-    GCMSenderID: string;
-    stamp: () => Promise<string>;
-    brandAuthUrl: (options: {
-        language: EULanguages;
-        serviceId: string;
-        userId: string;
-    }) => string;
+    pushType: string;
+    loginFormHost: string;
+    endpoints: {
+        deviceIdURL: string;
+        integrationInfoURL: string;
+        silentSigninURL: string;
+        languageURL: string;
+        loginURL: string;
+        tokenURL: string;
+    };
+    stamp: {
+        result: string | null;
+        error: Error | null;
+    };
 }
-type EnvironmentConfig = Required<Pick<EuropeBlueLinkyConfig, 'stampMode'>> & Partial<Pick<EuropeBlueLinkyConfig, 'stampsFile'>>;
-type BrandEnvironmentConfig = Pick<EuropeBlueLinkyConfig, 'brand'> & Partial<EnvironmentConfig>;
-export declare const getBrandEnvironment: ({ brand, stampMode, stampsFile, }: BrandEnvironmentConfig) => EuropeanBrandEnvironment;
+type BrandEnvironmentConfig = Pick<EuropeBlueLinkyConfig, 'brand'>;
+export declare const getBrandEnvironment: ({ brand, }: BrandEnvironmentConfig) => EuropeanBrandEnvironment;
 export {};
